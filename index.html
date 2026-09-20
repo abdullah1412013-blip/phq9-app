@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مقياس الصحة النفسية (PHQ-9) - مباشر</title>
+  <title>مقياس الصحة النفسية (PHQ-9) - التغطية المباشرة</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -35,7 +35,7 @@
 
 <div class="header">
   <h1>📊 التغطية التفاعلية المباشرة - مقياس (PHQ-9)</h1>
-  <div class="status-badge" id="netStatus">⚡ متصل بالربط السحابي المباشر</div>
+  <div class="status-badge" id="netStatus">⚡ الربط السحابي متصل ويعمل بين الشاشة والجوالات</div>
 </div>
 
 <div class="grid-layout">
@@ -71,8 +71,8 @@
 </div>
 
 <script>
-  // خادم سحابي مفتوح يتقبل التحديثات المباشرة دون قيود
-  const API_URL = "https://api.npoint.io/c0b8b809a86b3602f354";
+  // قناة حقيقية موحدة للتزامن الفوري بين أي جوال وشاشة الكمبيوتر
+  const DB_ENDPOINT = "https://keyvalue.imkey.store/api/v1/phq9_live_survey_2026";
 
   let currentAnswers = new Array(9).fill(0);
   const questions = [
@@ -125,50 +125,44 @@
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 3, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
   });
 
-  async function fetchLiveData() {
+  async function getRemoteData() {
     try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      const res = await fetch(DB_ENDPOINT);
+      if(!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
     } catch (e) {
-      let local = localStorage.getItem("phq9_backup");
-      return local ? JSON.parse(local) : [];
+      return [];
     }
   }
 
   async function submitResponse() {
     const btn = document.getElementById("subBtn");
     btn.disabled = true;
-    btn.innerText = "جاري الإرسال...";
+    btn.innerText = "جاري الإرسال للشاشة المباشرة...";
 
     try {
-      let currentData = await fetchLiveData();
-      currentData.push([...currentAnswers]);
+      let list = await getRemoteData();
+      list.push([...currentAnswers]);
 
-      localStorage.setItem("phq9_backup", JSON.stringify(currentData));
-
-      await fetch(API_URL, {
+      await fetch(DB_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentData)
+        body: JSON.stringify(list)
       });
 
-      alert("✅ تم إرسال إجابتك بنجاح! ستظهر فوراً على الشاشة.");
-      renderDashboard(currentData);
+      alert("✅ تم إرسال مشاركتك للسحاب! ستشاهدين المخطط البياني يتحدث على الكمبيوتر فوراً.");
+      renderDashboard(list);
     } catch (e) {
-      let currentData = JSON.parse(localStorage.getItem("phq9_backup") || "[]");
-      currentData.push([...currentAnswers]);
-      localStorage.setItem("phq9_backup", JSON.stringify(currentData));
-      renderDashboard(currentData);
-      alert("✅ تم تسجيل الإجابة وتحديث الشاشة فوراً!");
+      alert("تعذر الاتصال، يرجى التأكد من اتصال الإنترنت.");
     } finally {
       btn.disabled = false;
       btn.innerText = "إرسال النتيجة للشاشة المباشرة 🚀";
     }
   }
 
-  async function sync() {
-    const data = await fetchLiveData();
+  async function syncLoop() {
+    const data = await getRemoteData();
     renderDashboard(data);
   }
 
@@ -199,21 +193,20 @@
   }
 
   async function clearData() {
-    if (confirm("تأكيد تصفير الإحصائيات لتجربة جديدة؟")) {
-      localStorage.removeItem("phq9_backup");
+    if (confirm("هل تريدين تصفير وإلغاء جميع النتائج من السحاب؟")) {
       try {
-        await fetch(API_URL, {
+        await fetch(DB_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify([])
         });
       } catch (e) {}
-      sync();
+      syncLoop();
     }
   }
 
-  sync();
-  setInterval(sync, 2000);
+  syncLoop();
+  setInterval(syncLoop, 1500); // يفحص السحاب كل ثانية ونصف لتحديث الكمبيوتر تلقائياً
 </script>
 </body>
 </html>
