@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مقياس الصحة النفسية (PHQ-9) - التفاعلي المباشر</title>
+  <title>مقياس الصحة النفسية (PHQ-9) - مباشر</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
       --bg-dark: #0f172a;
       --card-bg: #1e293b;
       --text-main: #f8fafc;
       --accent: #6366f1;
-      --success: #10b981;
     }
     * { box-sizing: border-box; }
     body {
@@ -24,7 +23,7 @@
       padding: 15px;
     }
     .header { text-align: center; margin-bottom: 15px; }
-    .header h1 { margin: 0; font-size: 1.7rem; color: #818cf8; }
+    .header h1 { margin: 0; font-size: 1.6rem; color: #818cf8; }
     .grid-layout {
       display: grid;
       grid-template-columns: 280px 1fr;
@@ -44,7 +43,7 @@
     .counter-badge { font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 5px 0; }
     .charts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     @media (max-width: 650px) { .charts-container { grid-template-columns: 1fr; } }
-    .chart-box { position: relative; height: 240px; }
+    .chart-box { position: relative; height: 250px; width: 100%; }
     .form-panel { grid-column: 1 / -1; margin-top: 10px; background: #182234; }
     .q-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; }
     .btn-group button { background: #334155; color: #fff; border: none; padding: 6px 10px; margin-left: 2px; border-radius: 6px; cursor: pointer; }
@@ -58,7 +57,7 @@
 
 <div class="header">
   <h1>📊 التغطية التفاعلية المباشرة - مقياس (PHQ-9)</h1>
-  <div class="status-badge">⚡ ربط سحابي مباشر (Real-Time Cloud Sync)</div>
+  <div class="status-badge">⚡ ربط سحابي مباشر (Real-Time Active)</div>
 </div>
 
 <div class="grid-layout">
@@ -94,7 +93,6 @@
 </div>
 
 <script>
-  // رابط قاعدة البيانات السحابية المباشرة (Firebase Public Cloud Database)
   const API_URL = "https://phq9-live-default-rtdb.firebaseio.com/responses.json";
 
   let currentAnswers = new Array(9).fill(0);
@@ -106,7 +104,6 @@
     "9. التفكير بأن الحياة لا تستحق العيش"
   ];
 
-  // إنشـاء الـ QR Code لفتح نفس الرابط
   new QRCode(document.getElementById("qrcode"), {
     text: window.location.href, width: 110, height: 110
   });
@@ -128,13 +125,12 @@
   });
 
   function setVal(qIdx, val, btn) {
-    currentAnswers[qIdx] = val;
+    currentAnswers[qIdx] = Number(val);
     btn.parentElement.querySelectorAll("button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
   }
 
-  // إعداد الرسم البياني الدائري
-  const donutChart = new Chart(document.getElementById('donutChart').getContext('2d'), {
+  const donutChart = new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
       labels: ['طبيعي/خفيف (0-4)', 'طفيف (5-9)', 'متوسط (10-14)', 'شديد متوسط (15-19)', 'شديد جداً (20-27)'],
@@ -143,8 +139,7 @@
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#f8fafc' } } } }
   });
 
-  // إعداد الرسم البياني الشريطي
-  const barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
+  const barChart = new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
       labels: ['س1', 'س2', 'س3', 'س4', 'س5', 'س6', 'س7', 'س8', 'س9'],
@@ -153,11 +148,10 @@
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 3, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
   });
 
-  // إرسال الإجابة للسحاب عند الضغط على الزر
   async function submitResponse() {
     const btn = document.getElementById("subBtn");
     btn.disabled = true;
-    btn.innerText = "جاري الإرسال للسحاب...";
+    btn.innerText = "جاري الإرسال...";
 
     try {
       await fetch(API_URL, {
@@ -165,29 +159,35 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentAnswers)
       });
-      alert("✅ تم إرسال إجابتك بنجاح! ستظهر الآن على الشاشة المباشرة.");
+      alert("✅ تم إرسال إجابتك بنجاح!");
       fetchData();
     } catch (e) {
-      alert("حدث خطأ أثناء الإرسال، يرجى التأكد من الاتصال بالإنترنت.");
+      alert("حدث خطأ أثناء الإرسال، يرجى التأكد من اتصال الإنترنت.");
     } finally {
       btn.disabled = false;
       btn.innerText = "إرسال النتيجة للشاشة المباشرة 🚀";
     }
   }
 
-  // جلب البيانات من السحاب وتحديث الرسوم البيانية
   async function fetchData() {
     try {
       const res = await fetch(API_URL);
-      const data = await res.json();
-      if (!data) {
+      const rawData = await res.json();
+      if (!rawData) {
         renderDashboard([]);
         return;
       }
-      const responseList = Object.values(data);
+      
+      // تحويل البيانات من Object إلى Array بشكل مضمون 100%
+      const responseList = Object.values(rawData).map(item => {
+        if (Array.isArray(item)) return item.map(Number);
+        if (typeof item === 'object') return Object.values(item).map(Number);
+        return [];
+      }).filter(arr => arr.length === 9);
+
       renderDashboard(responseList);
     } catch (e) {
-      console.log("Error fetching cloud data:", e);
+      console.log("Error fetching data:", e);
     }
   }
 
@@ -198,16 +198,14 @@
     let qSums = new Array(9).fill(0);
 
     responseList.forEach(res => {
-      if (Array.isArray(res)) {
-        const sum = res.reduce((a, b) => a + b, 0);
-        if (sum <= 4) levels[0]++;
-        else if (sum <= 9) levels[1]++;
-        else if (sum <= 14) levels[2]++;
-        else if (sum <= 19) levels[3]++;
-        else levels[4]++;
+      const sum = res.reduce((a, b) => a + b, 0);
+      if (sum <= 4) levels[0]++;
+      else if (sum <= 9) levels[1]++;
+      else if (sum <= 14) levels[2]++;
+      else if (sum <= 19) levels[3]++;
+      else levels[4]++;
 
-        res.forEach((val, idx) => { qSums[idx] += val; });
-      }
+      res.forEach((val, idx) => { qSums[idx] += val; });
     });
 
     donutChart.data.datasets[0].data = levels;
@@ -218,7 +216,6 @@
     barChart.update();
   }
 
-  // تصفير قاعدة البيانات السحابية
   async function clearData() {
     if (confirm("هل أنت متأكد من تصفير وإلغاء جميع النتائج من السحاب؟")) {
       await fetch(API_URL, { method: 'DELETE' });
@@ -226,7 +223,6 @@
     }
   }
 
-  // الاستعلام التلقائي من السحاب كل ثانية ونصف
   fetchData();
   setInterval(fetchData, 1500);
 </script>
