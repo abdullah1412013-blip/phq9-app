@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مقياس الصحة النفسية (PHQ-9)</title>
+  <title>مقياس الصحة النفسية (PHQ-9) - مباشر</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -35,7 +35,7 @@
 
 <div class="header">
   <h1>📊 التغطية التفاعلية المباشرة - مقياس (PHQ-9)</h1>
-  <div class="status-badge">⚡ ربط سحابي مباشر (Real-Time Active)</div>
+  <div class="status-badge">⚡ ربط سحابي مباشر (Real-Time Live)</div>
 </div>
 
 <div class="grid-layout">
@@ -71,7 +71,9 @@
 </div>
 
 <script>
-  const API_URL = "https://phq9-live-default-rtdb.firebaseio.com/responses.json";
+  // رابط قاعدة بيانات سحابية مفتوحة ومضمونة للتزامن المباشر
+  const API_URL = "https://jsonbin.org/phq9_live_survey_2026";
+
   let currentAnswers = new Array(9).fill(0);
   const questions = [
     "1. فقدت الرغبة والأنس بالأمور المعتادة", "2. الشعور بالحزن أو الضيق",
@@ -123,40 +125,44 @@
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 3, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
   });
 
+  async function fetchCurrentData() {
+    try {
+      const res = await fetch("https://api.myjson.online/v1/records/442cb658-202a-466a-8b89-f53e6b528be4");
+      const data = await res.json();
+      return data.data || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
   async function submitResponse() {
     const btn = document.getElementById("subBtn");
     btn.disabled = true;
-    btn.innerText = "جاري الإرسال...";
+    btn.innerText = "جاري الإرسال للسحاب...";
+
     try {
-      await fetch(API_URL, {
-        method: 'POST',
+      let existingData = await fetchCurrentData();
+      existingData.push([...currentAnswers]);
+
+      await fetch("https://api.myjson.online/v1/records/442cb658-202a-466a-8b89-f53e6b528be4", {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentAnswers)
+        body: JSON.stringify({ data: existingData })
       });
-      alert("✅ تم إرسال إجابتك بنجاح!");
-      fetchData();
+
+      alert("✅ تم إرسال إجابتك بنجاح! ستظهر فوراً على الشاشة.");
+      renderDashboard(existingData);
     } catch (e) {
-      alert("حدث خطأ أثناء الإرسال، التأكد من الاتصال.");
+      alert("حدث خطأ في الاتصال، حاول مجدداً.");
     } finally {
       btn.disabled = false;
       btn.innerText = "إرسال النتيجة للشاشة المباشرة 🚀";
     }
   }
 
-  async function fetchData() {
-    try {
-      const res = await fetch(API_URL);
-      const rawData = await res.json();
-      if (!rawData) { renderDashboard([]); return; }
-      
-      const responseList = Object.values(rawData).map(item => {
-        if (Array.isArray(item)) return item.map(Number);
-        if (typeof item === 'object') return Object.values(item).map(Number);
-        return [];
-      }).filter(arr => arr.length === 9);
-
-      renderDashboard(responseList);
-    } catch (e) { console.log(e); }
+  async function syncLiveData() {
+    const data = await fetchCurrentData();
+    renderDashboard(data);
   }
 
   function renderDashboard(responseList) {
@@ -165,13 +171,16 @@
     let qSums = new Array(9).fill(0);
 
     responseList.forEach(res => {
-      const sum = res.reduce((a, b) => a + b, 0);
-      if (sum <= 4) levels[0]++;
-      else if (sum <= 9) levels[1]++;
-      else if (sum <= 14) levels[2]++;
-      else if (sum <= 19) levels[3]++;
-      else levels[4]++;
-      res.forEach((val, idx) => { qSums[idx] += val; });
+      if (Array.isArray(res) && res.length === 9) {
+        const sum = res.reduce((a, b) => a + b, 0);
+        if (sum <= 4) levels[0]++;
+        else if (sum <= 9) levels[1]++;
+        else if (sum <= 14) levels[2]++;
+        else if (sum <= 19) levels[3]++;
+        else levels[4]++;
+
+        res.forEach((val, idx) => { qSums[idx] += Number(val); });
+      }
     });
 
     donutChart.data.datasets[0].data = levels;
@@ -183,14 +192,18 @@
   }
 
   async function clearData() {
-    if (confirm("تأكيد تصفير النتائج؟")) {
-      await fetch(API_URL, { method: 'DELETE' });
-      fetchData();
+    if (confirm("تأكيد تصفير كافة الإحصائيات من السحاب؟")) {
+      await fetch("https://api.myjson.online/v1/records/442cb658-202a-466a-8b89-f53e6b528be4", {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: [] })
+      });
+      syncLiveData();
     }
   }
 
-  fetchData();
-  setInterval(fetchData, 1500);
+  syncLiveData();
+  setInterval(syncLiveData, 2000);
 </script>
 </body>
 </html>
