@@ -21,44 +21,44 @@
       background-color: var(--bg-dark);
       color: var(--text-main);
       margin: 0;
-      padding: 20px;
+      padding: 15px;
     }
-    .header { text-align: center; margin-bottom: 20px; }
-    .header h1 { margin: 0; font-size: 1.8rem; color: #818cf8; }
+    .header { text-align: center; margin-bottom: 15px; }
+    .header h1 { margin: 0; font-size: 1.7rem; color: #818cf8; }
     .grid-layout {
       display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 20px;
-      max-width: 1200px;
+      grid-template-columns: 280px 1fr;
+      gap: 15px;
+      max-width: 1100px;
       margin: 0 auto;
     }
     @media (max-width: 850px) { .grid-layout { grid-template-columns: 1fr; } }
     .card {
       background: var(--card-bg);
       border-radius: 16px;
-      padding: 20px;
+      padding: 18px;
       border: 1px solid #334155;
     }
     .qr-panel { text-align: center; }
     #qrcode { display: inline-block; margin: 10px 0; padding: 8px; background: #fff; border-radius: 12px; }
-    .counter-badge { font-size: 2.5rem; font-weight: 800; color: #38bdf8; margin: 5px 0; }
-    .charts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .counter-badge { font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 5px 0; }
+    .charts-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     @media (max-width: 650px) { .charts-container { grid-template-columns: 1fr; } }
-    .chart-box { position: relative; height: 260px; }
+    .chart-box { position: relative; height: 240px; }
     .form-panel { grid-column: 1 / -1; margin-top: 10px; background: #182234; }
-    .q-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #334155; }
+    .q-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; }
     .btn-group button { background: #334155; color: #fff; border: none; padding: 6px 10px; margin-left: 2px; border-radius: 6px; cursor: pointer; }
     .btn-group button.active { background: var(--accent); font-weight: bold; }
     .submit-btn { width: 100%; background: #10b981; color: white; font-size: 1.1rem; font-weight: bold; padding: 12px; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; }
     .reset-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-top: 10px; font-family: inherit; font-size: 0.8rem; }
-    .status-badge { background: #10b981; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 10px; }
+    .status-badge { background: #10b981; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
 <div class="header">
   <h1>📊 التغطية التفاعلية المباشرة - مقياس (PHQ-9)</h1>
-  <div class="status-badge">⚡ مزامنة حية ومباشرة شغال (Live REST API)</div>
+  <div class="status-badge">⚡ ربط سحابي مباشر (Real-Time Cloud Sync)</div>
 </div>
 
 <div class="grid-layout">
@@ -67,7 +67,7 @@
     <div id="participantCount" class="counter-badge">0</div>
     <p style="color:#94a3b8; font-size:0.85rem;">مشارك في القاعة الآن</p>
     <hr style="border-color:#334155; margin: 10px 0;">
-    <p style="font-size:0.8rem; color:#cbd5e1;">امسح الكود للمشاركة والتصويت:</p>
+    <p style="font-size:0.8rem; color:#cbd5e1;">امسح الكود من جوالك للمشاركة:</p>
     <div id="qrcode"></div>
     <br>
     <button class="reset-btn" onclick="clearData()">تصفير النتائج لتجربة جديدة 🔄</button>
@@ -94,7 +94,7 @@
 </div>
 
 <script>
-  // Open Real-time Public REST Endpoint
+  // رابط قاعدة البيانات السحابية المباشرة (Firebase Public Cloud Database)
   const API_URL = "https://phq9-live-default-rtdb.firebaseio.com/responses.json";
 
   let currentAnswers = new Array(9).fill(0);
@@ -106,6 +106,7 @@
     "9. التفكير بأن الحياة لا تستحق العيش"
   ];
 
+  // إنشـاء الـ QR Code لفتح نفس الرابط
   new QRCode(document.getElementById("qrcode"), {
     text: window.location.href, width: 110, height: 110
   });
@@ -132,6 +133,7 @@
     btn.classList.add("active");
   }
 
+  // إعداد الرسم البياني الدائري
   const donutChart = new Chart(document.getElementById('donutChart').getContext('2d'), {
     type: 'doughnut',
     data: {
@@ -141,6 +143,7 @@
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#f8fafc' } } } }
   });
 
+  // إعداد الرسم البياني الشريطي
   const barChart = new Chart(document.getElementById('barChart').getContext('2d'), {
     type: 'bar',
     data: {
@@ -150,10 +153,11 @@
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 3, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
   });
 
+  // إرسال الإجابة للسحاب عند الضغط على الزر
   async function submitResponse() {
     const btn = document.getElementById("subBtn");
     btn.disabled = true;
-    btn.innerText = "جاري الإرسال...";
+    btn.innerText = "جاري الإرسال للسحاب...";
 
     try {
       await fetch(API_URL, {
@@ -161,17 +165,18 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentAnswers)
       });
-      alert("✅ تم إرسال إجابتك بنجاح وستظهر فوراً على شاشة العرض!");
-      fetchAndData();
+      alert("✅ تم إرسال إجابتك بنجاح! ستظهر الآن على الشاشة المباشرة.");
+      fetchData();
     } catch (e) {
-      alert("حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى.");
+      alert("حدث خطأ أثناء الإرسال، يرجى التأكد من الاتصال بالإنترنت.");
     } finally {
       btn.disabled = false;
       btn.innerText = "إرسال النتيجة للشاشة المباشرة 🚀";
     }
   }
 
-  async function fetchAndData() {
+  // جلب البيانات من السحاب وتحديث الرسوم البيانية
+  async function fetchData() {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
@@ -182,7 +187,7 @@
       const responseList = Object.values(data);
       renderDashboard(responseList);
     } catch (e) {
-      console.log("Polling error:", e);
+      console.log("Error fetching cloud data:", e);
     }
   }
 
@@ -213,16 +218,17 @@
     barChart.update();
   }
 
+  // تصفير قاعدة البيانات السحابية
   async function clearData() {
-    if (confirm("هل أنت متأكد من تصفير وإلغاء جميع النتائج السابقة؟")) {
+    if (confirm("هل أنت متأكد من تصفير وإلغاء جميع النتائج من السحاب؟")) {
       await fetch(API_URL, { method: 'DELETE' });
-      fetchAndData();
+      fetchData();
     }
   }
 
-  // Poll for new live votes every 1.5 seconds automatically
-  fetchAndData();
-  setInterval(fetchAndData, 1500);
+  // الاستعلام التلقائي من السحاب كل ثانية ونصف
+  fetchData();
+  setInterval(fetchData, 1500);
 </script>
 </body>
 </html>
