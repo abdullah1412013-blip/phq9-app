@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مقياس الصحة النفسية (PHQ-9) - التفاعلي المباشر</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --accent: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .header { text-align: center; margin-bottom: 25px; }
+    .header h1 { margin: 0; font-size: 1.8rem; font-weight: 800; color: #818cf8; }
+    .header p { color: #94a3b8; margin-top: 5px; }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 900px) { .grid-layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border: 1px solid #334155;
+    }
+
+    .qr-panel { text-align: center; }
+    #qrcode { display: inline-block; margin: 15px 0; padding: 10px; background: #fff; border-radius: 12px; }
+    .counter-badge { font-size: 2.8rem; font-weight: 800; color: #38bdf8; margin: 10px 0; }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 700px) { .charts-container { grid-template-columns: 1fr; } }
+
+    .chart-box { position: relative; height: 280px; }
+
+    .form-panel { grid-column: 1 / -1; margin-top: 10px; background: #182234; }
+    .q-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #334155;
+    }
+    .q-row:last-child { border-bottom: none; }
+    .btn-group button {
+      background: #334155;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      margin-left: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-group button.active { background: var(--accent); font-weight: bold; }
+    
+    .submit-btn {
+      width: 100%;
+      background: #10b981;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+    .submit-btn:hover { background: #059669; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 لوحة التغطية التفاعلية المباشرة - مقياس الصحة النفسية (PHQ-9)</h1>
+  <p>شاشة التقييم الحي أمام الجمهور (تتحدث فورياً مع كل إجابة جديدة)</p>
+</div>
+
+<div class="grid-layout">
+  
+  <!-- Side Info Panel -->
+  <div class="card qr-panel">
+    <h3>إجمالي المشاركين</h3>
+    <div id="participantCount" class="counter-badge">0</div>
+    <p style="color:#94a3b8; font-size:0.9rem;">مشارك في القاعة حتى الآن</p>
+    <hr style="border-color:#334155; margin: 15px 0;">
+    <p style="font-size:0.85rem; color:#cbd5e1;">رمز المشاركة والتصويت السريع:</p>
+    <div id="qrcode"></div>
+  </div>
+
+  <!-- Live Charts Display -->
+  <div class="card">
+    <div class="charts-container">
+      <div>
+        <h4 style="text-align:center; margin-top:0;">توزيع مستويات الاكتئاب</h4>
+        <div class="chart-box"><canvas id="donutChart"></canvas></div>
+      </div>
+      <div>
+        <h4 style="text-align:center; margin-top:0;">متوسط شدة الأعراض لكل سؤال</h4>
+        <div class="chart-box"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Input Simulation Form for Operator / Testing -->
+  <div class="card form-panel">
+    <h3 style="color:#38bdf8; margin-top:0;">📝 شاشة إدخال نتيجة جديدة (لتجربة التحديث المباشر)</h3>
+    <div id="questionsContainer"></div>
+    <button class="submit-btn" onclick="submitResponse()">إرسال النتيجة وعرضها فورياً على الشاشة 🚀</button>
+  </div>
+
+</div>
+
+<script>
+  let responseData = [];
+  let currentAnswers = new Array(9).fill(0);
+
+  const questions = [
+    "1. فقدت الرغبة والأنس بالأمور المعتادة",
+    "2. الشعور بالحزن أو الضيق",
+    "3. صعوبات في النوم أو البقاء نائماً",
+    "4. الشعور بالخمول والكسل",
+    "5. فقدان الشهية أو الأكل بشراهة",
+    "6. الشعور بالسوء تجاه النفس",
+    "7. صعوبة في التركيز",
+    "8. البطء في الحركة/التحدث أو التوتر الشديد",
+    "9. التفكير بأن الحياة لا تستحق العيش"
+  ];
+
+  // Generate QR Code
+  new QRCode(document.getElementById("qrcode"), {
+    text: window.location.href,
+    width: 110,
+    height: 110
+  });
+
+  // Render Form Questions
+  const qContainer = document.getElementById("questionsContainer");
+  questions.forEach((q, qIdx) => {
+    const row = document.createElement("div");
+    row.className = "q-row";
+    row.innerHTML = `
+      <span style="font-size:0.95rem;">${q}</span>
+      <div class="btn-group">
+        <button class="active" onclick="setVal(${qIdx}, 0, this)">0: أبداً</button>
+        <button onclick="setVal(${qIdx}, 1, this)">1: قليلاً</button>
+        <button onclick="setVal(${qIdx}, 2, this)">2: أحياناً</button>
+        <button onclick="setVal(${qIdx}, 3, this)">3: غالباً</button>
+      </div>
+    `;
+    qContainer.appendChild(row);
+  });
+
+  function setVal(qIdx, val, btn) {
+    currentAnswers[qIdx] = val;
+    const parent = btn.parentElement;
+    parent.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  }
+
+  // Setup Donut Chart
+  const donutCtx = document.getElementById('donutChart').getContext('2d');
+  const donutChart = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['طبيعي/خفيف (0-4)', 'طفيف (5-9)', 'متوسط (10-14)', 'شديد متوسط (15-19)', 'شديد جداً (20-27)'],
+      datasets: [{
+        data: [0, 0, 0, 0, 0],
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#f97316', '#ef4444'],
+        borderWidth: 2,
+        borderColor: '#1e293b'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#f8fafc', font: { family: 'Tajawal' } } } }
+    }
+  });
+
+  // Setup Bar Chart
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  const barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: ['س1', 'س2', 'س3', 'س4', 'س5', 'س6', 'س7', 'س8', 'س9'],
+      datasets: [{
+        label: 'متوسط النقاط (0-3)',
+        data: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        backgroundColor: '#818cf8',
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { min: 0, max: 3, ticks: { color: '#94a3b8' } },
+        x: { ticks: { color: '#94a3b8' } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  function submitResponse() {
+    responseData.push([...currentAnswers]);
+    updateDashboard();
+  }
+
+  function updateDashboard() {
+    document.getElementById("participantCount").innerText = responseData.length;
+
+    let levels = [0, 0, 0, 0, 0];
+    let qSums = new Array(9).fill(0);
+
+    responseData.forEach(res => {
+      const sum = res.reduce((a, b) => a + b, 0);
+      if (sum <= 4) levels[0]++;
+      else if (sum <= 9) levels[1]++;
+      else if (sum <= 14) levels[2]++;
+      else if (sum <= 19) levels[3]++;
+      else levels[4]++;
+
+      res.forEach((val, idx) => { qSums[idx] += val; });
+    });
+
+    donutChart.data.datasets[0].data = levels;
+    donutChart.update();
+
+    const count = responseData.length || 1;
+    const qAvgs = qSums.map(s => (s / count).toFixed(1));
+    barChart.data.datasets[0].data = qAvgs;
+    barChart.update();
+  }
+</script>
+
+</body>
+</html>
