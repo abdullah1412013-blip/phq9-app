@@ -3,41 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مقياس الصحة النفسية (PHQ-9) - مباشر</title>
+  <title>مقياس الصحة النفسية (PHQ-9)</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    :root {
-      --bg-dark: #0f172a;
-      --card-bg: #1e293b;
-      --text-main: #f8fafc;
-      --accent: #6366f1;
-    }
+    :root { --bg-dark: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc; --accent: #6366f1; }
     * { box-sizing: border-box; }
-    body {
-      font-family: 'Tajawal', sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      margin: 0;
-      padding: 15px;
-    }
+    body { font-family: 'Tajawal', sans-serif; background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; }
     .header { text-align: center; margin-bottom: 15px; }
     .header h1 { margin: 0; font-size: 1.6rem; color: #818cf8; }
-    .grid-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 15px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+    .grid-layout { display: grid; grid-template-columns: 280px 1fr; gap: 15px; max-width: 1100px; margin: 0 auto; }
     @media (max-width: 850px) { .grid-layout { grid-template-columns: 1fr; } }
-    .card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 18px;
-      border: 1px solid #334155;
-    }
+    .card { background: var(--card-bg); border-radius: 16px; padding: 18px; border: 1px solid #334155; }
     .qr-panel { text-align: center; }
     #qrcode { display: inline-block; margin: 10px 0; padding: 8px; background: #fff; border-radius: 12px; }
     .counter-badge { font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 5px 0; }
@@ -49,7 +27,7 @@
     .btn-group button { background: #334155; color: #fff; border: none; padding: 6px 10px; margin-left: 2px; border-radius: 6px; cursor: pointer; }
     .btn-group button.active { background: var(--accent); font-weight: bold; }
     .submit-btn { width: 100%; background: #10b981; color: white; font-size: 1.1rem; font-weight: bold; padding: 12px; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; }
-    .reset-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-top: 10px; font-family: inherit; font-size: 0.8rem; }
+    .reset-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-top: 10px; font-size: 0.8rem; }
     .status-badge { background: #10b981; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-block; margin-bottom: 10px; }
   </style>
 </head>
@@ -94,7 +72,6 @@
 
 <script>
   const API_URL = "https://phq9-live-default-rtdb.firebaseio.com/responses.json";
-
   let currentAnswers = new Array(9).fill(0);
   const questions = [
     "1. فقدت الرغبة والأنس بالأمور المعتادة", "2. الشعور بالحزن أو الضيق",
@@ -104,9 +81,7 @@
     "9. التفكير بأن الحياة لا تستحق العيش"
   ];
 
-  new QRCode(document.getElementById("qrcode"), {
-    text: window.location.href, width: 110, height: 110
-  });
+  new QRCode(document.getElementById("qrcode"), { text: window.location.href, width: 110, height: 110 });
 
   const qContainer = document.getElementById("questionsContainer");
   questions.forEach((q, qIdx) => {
@@ -152,7 +127,6 @@
     const btn = document.getElementById("subBtn");
     btn.disabled = true;
     btn.innerText = "جاري الإرسال...";
-
     try {
       await fetch(API_URL, {
         method: 'POST',
@@ -162,7 +136,7 @@
       alert("✅ تم إرسال إجابتك بنجاح!");
       fetchData();
     } catch (e) {
-      alert("حدث خطأ أثناء الإرسال، يرجى التأكد من اتصال الإنترنت.");
+      alert("حدث خطأ أثناء الإرسال، التأكد من الاتصال.");
     } finally {
       btn.disabled = false;
       btn.innerText = "إرسال النتيجة للشاشة المباشرة 🚀";
@@ -173,12 +147,8 @@
     try {
       const res = await fetch(API_URL);
       const rawData = await res.json();
-      if (!rawData) {
-        renderDashboard([]);
-        return;
-      }
+      if (!rawData) { renderDashboard([]); return; }
       
-      // تحويل البيانات من Object إلى Array بشكل مضمون 100%
       const responseList = Object.values(rawData).map(item => {
         if (Array.isArray(item)) return item.map(Number);
         if (typeof item === 'object') return Object.values(item).map(Number);
@@ -186,14 +156,11 @@
       }).filter(arr => arr.length === 9);
 
       renderDashboard(responseList);
-    } catch (e) {
-      console.log("Error fetching data:", e);
-    }
+    } catch (e) { console.log(e); }
   }
 
   function renderDashboard(responseList) {
     document.getElementById("participantCount").innerText = responseList.length;
-
     let levels = [0, 0, 0, 0, 0];
     let qSums = new Array(9).fill(0);
 
@@ -204,7 +171,6 @@
       else if (sum <= 14) levels[2]++;
       else if (sum <= 19) levels[3]++;
       else levels[4]++;
-
       res.forEach((val, idx) => { qSums[idx] += val; });
     });
 
@@ -217,7 +183,7 @@
   }
 
   async function clearData() {
-    if (confirm("هل أنت متأكد من تصفير وإلغاء جميع النتائج من السحاب؟")) {
+    if (confirm("تأكيد تصفير النتائج؟")) {
       await fetch(API_URL, { method: 'DELETE' });
       fetchData();
     }
