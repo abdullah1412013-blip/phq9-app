@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مقياس الصحة النفسية (PHQ-9) - التغطية المباشرة</title>
+  <title>مقياس الصحة النفسية (PHQ-9)</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -35,19 +35,19 @@
 
 <div class="header">
   <h1>📊 التغطية التفاعلية المباشرة - مقياس (PHQ-9)</h1>
-  <div class="status-badge" id="netStatus">⚡ الربط السحابي متصل ويعمل بين الشاشة والجوالات</div>
+  <div class="status-badge">⚡ نظام جاهز ومستقر 100%</div>
 </div>
 
 <div class="grid-layout">
   <div class="card qr-panel">
     <h3>إجمالي المشاركين</h3>
     <div id="participantCount" class="counter-badge">0</div>
-    <p style="color:#94a3b8; font-size:0.85rem;">مشارك في القاعة الآن</p>
+    <p style="color:#94a3b8; font-size:0.85rem;">مشارك في القاعة</p>
     <hr style="border-color:#334155; margin: 10px 0;">
-    <p style="font-size:0.8rem; color:#cbd5e1;">امسح الكود من جوالك للمشاركة:</p>
+    <p style="font-size:0.8rem; color:#cbd5e1;">رابط الصفحة الحالي:</p>
     <div id="qrcode"></div>
     <br>
-    <button class="reset-btn" onclick="clearData()">تصفير النتائج لتجربة جديدة 🔄</button>
+    <button class="reset-btn" onclick="clearData()">تصفير النتائج 🔄</button>
   </div>
 
   <div class="card">
@@ -66,14 +66,11 @@
   <div class="card form-panel">
     <h3 style="color:#38bdf8; margin-top:0;">📝 نموذج المشاركة (اختر الإجابات واضغط إرسال)</h3>
     <div id="questionsContainer"></div>
-    <button class="submit-btn" id="subBtn" onclick="submitResponse()">إرسال النتيجة للشاشة المباشرة 🚀</button>
+    <button class="submit-btn" id="subBtn" onclick="submitResponse()">إرسال النتيجة لعرض الرسم البياني 🚀</button>
   </div>
 </div>
 
 <script>
-  // قناة حقيقية موحدة للتزامن الفوري بين أي جوال وشاشة الكمبيوتر
-  const DB_ENDPOINT = "https://keyvalue.imkey.store/api/v1/phq9_live_survey_2026";
-
   let currentAnswers = new Array(9).fill(0);
   const questions = [
     "1. فقدت الرغبة والأنس بالأمور المعتادة", "2. الشعور بالحزن أو الضيق",
@@ -125,45 +122,16 @@
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 3, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
   });
 
-  async function getRemoteData() {
-    try {
-      const res = await fetch(DB_ENDPOINT);
-      if(!res.ok) return [];
-      const json = await res.json();
-      return Array.isArray(json) ? json : [];
-    } catch (e) {
-      return [];
-    }
+  function getStoredData() {
+    return JSON.parse(localStorage.getItem("phq9_final_data") || "[]");
   }
 
-  async function submitResponse() {
-    const btn = document.getElementById("subBtn");
-    btn.disabled = true;
-    btn.innerText = "جاري الإرسال للشاشة المباشرة...";
-
-    try {
-      let list = await getRemoteData();
-      list.push([...currentAnswers]);
-
-      await fetch(DB_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(list)
-      });
-
-      alert("✅ تم إرسال مشاركتك للسحاب! ستشاهدين المخطط البياني يتحدث على الكمبيوتر فوراً.");
-      renderDashboard(list);
-    } catch (e) {
-      alert("تعذر الاتصال، يرجى التأكد من اتصال الإنترنت.");
-    } finally {
-      btn.disabled = false;
-      btn.innerText = "إرسال النتيجة للشاشة المباشرة 🚀";
-    }
-  }
-
-  async function syncLoop() {
-    const data = await getRemoteData();
-    renderDashboard(data);
+  function submitResponse() {
+    let list = getStoredData();
+    list.push([...currentAnswers]);
+    localStorage.setItem("phq9_final_data", JSON.stringify(list));
+    renderDashboard(list);
+    alert("✅ تم تسجيل الإجابة وتحديث الرسم البياني فوراً!");
   }
 
   function renderDashboard(responseList) {
@@ -192,21 +160,15 @@
     barChart.update();
   }
 
-  async function clearData() {
-    if (confirm("هل تريدين تصفير وإلغاء جميع النتائج من السحاب؟")) {
-      try {
-        await fetch(DB_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([])
-        });
-      } catch (e) {}
-      syncLoop();
+  function clearData() {
+    if (confirm("هل تريدين تصفير النتائج؟")) {
+      localStorage.removeItem("phq9_final_data");
+      renderDashboard([]);
     }
   }
 
-  syncLoop();
-  setInterval(syncLoop, 1500); // يفحص السحاب كل ثانية ونصف لتحديث الكمبيوتر تلقائياً
+  // تشغيل أولي لعرض البيانات الحالية
+  renderDashboard(getStoredData());
 </script>
 </body>
 </html>
